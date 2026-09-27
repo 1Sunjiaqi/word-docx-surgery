@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Generated QA and verification output.
+qa_*/
+pages_*/
+rendered.pdf
+manifest.json
+
+# Local baseline and work products.
+*.tsv
+_work/
+dist/

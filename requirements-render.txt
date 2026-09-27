@@ -1,0 +1,4 @@
+# Windows-only rendering dependencies. Core scripts require no third-party package.
+pywin32>=306
+pypdfium2>=4.30
+Pillow>=10
