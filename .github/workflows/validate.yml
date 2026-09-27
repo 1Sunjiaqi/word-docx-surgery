@@ -21,7 +21,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      - name: Validate JSON manifests
+        run: |
+          python -m json.tool plugin.json
+          python -m json.tool .codex-plugin/plugin.json
+          python -m json.tool .agents/plugins/marketplace.json
       - name: Compile scripts
-        run: python -m compileall -q scripts
+        run: python -m compileall -q skills/word-docx-surgery/scripts
       - name: Run synthetic self-test
-        run: python scripts/selftest.py
+        run: python skills/word-docx-surgery/scripts/selftest.py

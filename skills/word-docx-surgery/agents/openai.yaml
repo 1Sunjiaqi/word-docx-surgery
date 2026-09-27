@@ -1,0 +1,7 @@
+interface:
+  display_name: "Word DOCX Surgery - Word 局部改动闸门"
+  short_description: "Surgical .doc/.docx edits with change-ledger and render-QA proof"
+  brand_color: "#1F6FEB"
+  default_prompt: "Use $word-docx-surgery to fill the declared cells in this .docx and prove that only those cells changed."
+policy:
+  allow_implicit_invocation: true

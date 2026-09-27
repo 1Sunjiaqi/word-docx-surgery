@@ -1,0 +1,21 @@
+{
+  "name": "word-docx-surgery",
+  "interface": {
+    "displayName": "Word DOCX Surgery"
+  },
+  "plugins": [
+    {
+      "name": "word-docx-surgery",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/1Sunjiaqi/word-docx-surgery.git",
+        "ref": "main"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

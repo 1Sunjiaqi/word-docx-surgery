@@ -1,0 +1,50 @@
+{
+  "$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+  "name": "word-docx-surgery",
+  "version": "0.2.0",
+  "description": "Surgical, evidence-checked edits to existing .doc and .docx documents.",
+  "author": {
+    "name": "word-docx-surgery contributors",
+    "url": "https://github.com/1Sunjiaqi"
+  },
+  "homepage": "https://github.com/1Sunjiaqi/word-docx-surgery",
+  "repository": "https://github.com/1Sunjiaqi/word-docx-surgery",
+  "license": "MIT",
+  "keywords": [
+    "codex-skill",
+    "chatgpt-plugin",
+    "agent-skills",
+    "word",
+    "docx",
+    "ooxml",
+    "microsoft-word",
+    "document-editing",
+    "document-automation",
+    "change-ledger",
+    "render-qa"
+  ],
+  "extensions": {
+    "com.openai": {
+      "interface": {
+        "displayName": "Word DOCX Surgery",
+        "shortDescription": "Surgical .doc/.docx edits with change and render gates.",
+        "longDescription": "Edit existing Word deliverables only where declared, then prove the scope with a package-level change ledger and a desktop Word render comparison.",
+        "developerName": "word-docx-surgery contributors",
+        "category": "Productivity",
+        "capabilities": [
+          "Read",
+          "Write"
+        ],
+        "websiteURL": "https://github.com/1Sunjiaqi/word-docx-surgery",
+        "privacyPolicyURL": "https://github.com/1Sunjiaqi/word-docx-surgery/blob/main/PRIVACY.md",
+        "termsOfServiceURL": "https://github.com/1Sunjiaqi/word-docx-surgery/blob/main/TERMS.md",
+        "defaultPrompt": [
+          "Fill the declared cells in this Word document and prove only those cells changed.",
+          "Make a surgical wording edit in this .docx and run both verification gates.",
+          "Update this Word deliverable without changing anything outside the allowlist."
+        ],
+        "brandColor": "#1F6FEB"
+      }
+    }
+  }
+}

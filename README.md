@@ -1,118 +1,144 @@
-# word-docx-surgery
+# Word DOCX Surgery
 
-Make surgical edits to existing `.doc` and `.docx` files, then prove that only the
-declared locations changed.
+[English](README.en.md) | 简体中文
 
-[简体中文](README.zh-CN.md)
+在既有 `.doc` / `.docx` 上做局部修改，并用机器可核对的证据证明“只改了申报过的那几处”。
 
-## Overview
+本仓库同时提供 Codex / ChatGPT skill 与 plugin。Agent 可直接读取
+[`skills/word-docx-surgery/SKILL.md`](skills/word-docx-surgery/SKILL.md)，或先读取机器友好的
+[`llms.txt`](llms.txt)。
 
-`word-docx-surgery` is a Codex skill for real Word deliverables where the original
-document must otherwise remain untouched. It combines direct OOXML edits with two
-machine-checkable gates:
+## 安装
 
-1. `docx_ledger.py` proves that every content and package-part change is inside the
-   declared allowlist.
-2. `render_qa.py` asks desktop Word to update fields, repaginate, export a PDF, and
-   compare the changed pages across renders.
+### Codex / ChatGPT Plugin
 
-The skill is intentionally evidence-oriented. A change is not considered complete
-merely because the edited text looks correct.
-
-## Requirements
-
-Core editing and verification:
-
-- Python 3.11 or newer.
-- No third-party Python packages.
-
-Real rendering and `.doc -> .docx` conversion:
-
-- Windows with desktop Microsoft Word.
-- `pywin32`.
-- Poppler `pdftoppm` or `pypdfium2` for PDF rasterization.
-- `Pillow` is optional and only used for the contact sheet.
-
-Install the optional rendering dependencies:
+先把本仓库注册为 plugin marketplace，再安装 plugin：
 
 ```bash
-python -m pip install -r requirements-render.txt
+codex plugin marketplace add 1Sunjiaqi/word-docx-surgery --sparse .agents/plugins
+codex plugin add word-docx-surgery@word-docx-surgery
 ```
 
-## Install As A Codex Skill
+安装后可在新任务中用 `$word-docx-surgery` 显式调用，也可以直接描述一个需要核对改动范围的 Word 任务。
 
-Clone this repository directly into the Codex skills directory:
+### 使用 Skill Installer
+
+在 Codex 中让 `$skill-installer` 从本仓库安装：
+
+```text
+$skill-installer https://github.com/1Sunjiaqi/word-docx-surgery/tree/main/skills/word-docx-surgery
+```
+
+### 手动安装
+
+把 [`skills/word-docx-surgery`](skills/word-docx-surgery) 整个目录复制到用户的 skills 目录：
 
 ```powershell
-git clone <repository-url> "$env:USERPROFILE\.codex\skills\word-docx-surgery"
+git clone --depth 1 https://github.com/1Sunjiaqi/word-docx-surgery.git "$env:TEMP\word-docx-surgery"
+Copy-Item -Recurse "$env:TEMP\word-docx-surgery\skills\word-docx-surgery" "$env:USERPROFILE\.codex\skills\word-docx-surgery"
 ```
 
-On systems where `CODEX_HOME` is set:
+## 它解决什么
+
+`word-docx-surgery` 面向真实 Word 交付件：原件必须保持不动，只允许修改明确列出的位置。
+它不是只检查“文字看起来对不对”，而是用两道闸门约束整次改动：
+
+1. `docx_ledger.py` 证明内容与包内部件的每处变化都在白名单内。
+2. `render_qa.py` 让桌面版 Word 更新域、重新分页、导出 PDF，并比较不同版本之间的变化页。
+
+适合：
+
+- 在既有 Word 文档中填表、改措辞、重置列表编号或插入指定段落。
+- 需要交付“改动清单 + 渲染结论”，而不是只交一份看似正确的文件。
+- 需要独立复核“原件没变、改动没有越界、版面变化符合预期”。
+
+不适合：
+
+- 从零创建 Word 文档。
+- 整篇格式转换。
+- 没有明确白名单，却要求全文替换或重排。
+
+## 环境
+
+核心编辑与验证：
+
+- Python 3.11 或更高版本。
+- 不需要第三方 Python 包。
+
+真实渲染与 `.doc -> .docx` 转换：
+
+- Windows 和桌面版 Microsoft Word。
+- `pywin32`。
+- Poppler `pdftoppm` 或 `pypdfium2`，用于把 PDF 拆成逐页 PNG。
+- `Pillow` 可选，仅用于生成页面联系表。
+
+安装可选的渲染依赖：
 
 ```bash
-git clone <repository-url> "${CODEX_HOME}/skills/word-docx-surgery"
+python -m pip install -r skills/word-docx-surgery/requirements-render.txt
 ```
 
-Then invoke it as `$word-docx-surgery` or describe the required proof-oriented edit.
+## 首次自检
 
-## Quick Check
-
-Run the synthetic self-test before editing a real document:
+在处理真实文档前先运行：
 
 ```bash
-python scripts/selftest.py
+python skills/word-docx-surgery/scripts/selftest.py
 ```
 
-Expected result: `14 / 14` checks pass.
+预期结果为 `14 / 14` 通过。它会在临时目录生成合成 OOXML 样本，不读取任何真实文档。
 
-## Basic Workflow
+## 基本流程
 
-Inspect the document structure:
+先看结构：
 
 ```bash
-python scripts/docx_textconv.py document.docx > structure.txt
-python scripts/docx_min_edit.py document.docx --find "old text" --dry-run
+python skills/word-docx-surgery/scripts/docx_textconv.py document.docx > structure.txt
+python skills/word-docx-surgery/scripts/docx_min_edit.py document.docx --find "旧文字" --dry-run
 ```
 
-Make a single-location sample edit:
+先做一处样本：
 
 ```bash
-python scripts/docx_min_edit.py copy.docx --find "old text" --replace "new text" --occurrence 1 --out sample.docx
-python scripts/docx_ledger.py baseline.docx sample.docx --allow "TBL#1 > r03c01"
+python skills/word-docx-surgery/scripts/docx_min_edit.py copy.docx --find "旧文字" --replace "新文字" --occurrence 1 --out sample.docx
+python skills/word-docx-surgery/scripts/docx_ledger.py baseline.docx sample.docx --allow "TBL#1 > r03c01"
 ```
 
-Render and compare the result:
+再渲染核对：
 
 ```bash
-python scripts/render_qa.py sample.docx --out qa_sample
-python scripts/render_qa.py sample.docx --compare qa_baseline/manifest.json
+python skills/word-docx-surgery/scripts/render_qa.py sample.docx --out qa_sample
+python skills/word-docx-surgery/scripts/render_qa.py sample.docx --compare qa_baseline/manifest.json
 ```
 
-The allowlist should always be narrow and traceable to the original request. Do not
-use unrestricted whole-document replacement.
+白名单应尽量窄，并且能反查到原始要求。不要使用无限制的全文替换。
 
-## Repository Layout
+## 仓库结构
 
 ```text
 .
-├─ SKILL.md
-├─ agents/openai.yaml
-├─ references/
-├─ scripts/
-├─ requirements-render.txt
+├─ plugin.json                    # 可移植 Agent Plugins 清单
+├─ .codex-plugin/plugin.json      # Codex 兼容清单
+├─ .agents/plugins/marketplace.json
+├─ skills/word-docx-surgery/
+│  ├─ SKILL.md
+│  ├─ agents/openai.yaml
+│  ├─ references/
+│  ├─ scripts/
+│  └─ requirements-render.txt
+├─ llms.txt
 └─ .github/workflows/validate.yml
 ```
 
-The core scripts use only the Python standard library and are covered by the
-cross-platform CI self-test. Word rendering must be validated separately on a
-Windows machine with desktop Word installed.
+`plugin.json`、`.codex-plugin/plugin.json` 和 `agents/openai.yaml` 中的名称、描述和关键词用于
+plugin 展示与隐式匹配；`SKILL.md` 的 `description` 决定 agent 何时加载完整工作流。
 
-## Privacy
+## 隐私边界
 
-This repository contains no user documents, extracted document text, session logs,
-or private verification output. The self-test builds synthetic OOXML fixtures in a
-temporary directory.
+本仓库不包含用户文档、文档正文摘录、会话日志或私人验证输出。自检使用临时目录中的
+合成 OOXML 样本。Plugin 本身在本机执行，不建立远程上传或数据收集服务。详见
+[`PRIVACY.md`](PRIVACY.md)。
 
-## License
+## 许可证
 
 MIT

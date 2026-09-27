@@ -1,8 +1,8 @@
 ---
 name: word-docx-surgery
-description: 在一份既有的 .doc/.docx 上做局部增删改（填表、改措辞、重置列表编号、插段），并用机器可核对的证据证明"只改了申报过的那几处"。当真实 Word 交付件必须原地改动、且改动范围需要被证明时使用；不用于从零写新文档或整篇格式转换。
+description: "Use when making surgical edits to an existing .doc or .docx deliverable (fill selected table cells, reword text, reset list numbering, insert declared paragraphs) and proving with machine-checkable evidence that only the declared locations changed. Trigger words: Word, DOCX, OOXML, allowlist, change ledger, render QA, source integrity. 当真实 Word 交付件必须局部改动、且改动范围需要被证明时使用；不用于从零写新文档、整篇格式转换或无白名单的全文替换。"
 metadata:
-  short-description: 在既有 Word 上做可核对的局部改动
+  short-description: "Word/DOCX surgical edits with change-ledger and render-QA proof | 在既有 Word 上做可核对的局部改动"
 ---
 
 # Word 局部改动：两道闸门

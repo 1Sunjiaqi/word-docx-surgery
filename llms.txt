@@ -1,0 +1,60 @@
+# Word DOCX Surgery
+
+> Codex / ChatGPT skill and plugin for surgical, evidence-checked edits to existing
+> `.doc` and `.docx` deliverables.
+
+Repository: https://github.com/1Sunjiaqi/word-docx-surgery
+Primary skill: https://github.com/1Sunjiaqi/word-docx-surgery/blob/main/skills/word-docx-surgery/SKILL.md
+Machine-readable entry: https://github.com/1Sunjiaqi/word-docx-surgery/blob/main/llms.txt
+
+## Install
+
+As a plugin:
+
+```bash
+codex plugin marketplace add 1Sunjiaqi/word-docx-surgery --sparse .agents/plugins
+codex plugin add word-docx-surgery@word-docx-surgery
+```
+
+As a standalone skill:
+
+```text
+$skill-installer https://github.com/1Sunjiaqi/word-docx-surgery/tree/main/skills/word-docx-surgery
+```
+
+## Use When
+
+- Editing an existing `.doc` or `.docx` rather than creating a document from scratch.
+- Filling selected table cells, rewriting specified text, resetting list numbering, or
+  inserting declared paragraphs.
+- The final answer must include machine-checkable evidence that only the declared
+  package parts and rendered pages changed.
+- The task needs a change ledger, render comparison, and original-file integrity check.
+
+## Do Not Use When
+
+- Creating a document from scratch.
+- Performing a whole-document format conversion.
+- Running unrestricted find-and-replace without a declared allowlist.
+- The source file or allowed edit scope cannot be identified.
+
+## Core Workflow
+
+1. Freeze the original and derive a narrow allowlist from the request.
+2. Inspect the document structure with `docx_textconv.py`.
+3. Make one sample edit and pass `docx_ledger.py`.
+4. Render with desktop Word through `render_qa.py` and compare manifests.
+5. Verify the original is unchanged and report the ledger plus render conclusion.
+
+## Repository Paths
+
+- Skill instructions: `skills/word-docx-surgery/SKILL.md`
+- Scripts: `skills/word-docx-surgery/scripts/`
+- References: `skills/word-docx-surgery/references/`
+- Portable plugin manifest: `plugin.json`
+- Codex compatibility manifest: `.codex-plugin/plugin.json`
+- Repo marketplace: `.agents/plugins/marketplace.json`
+
+## License
+
+MIT
