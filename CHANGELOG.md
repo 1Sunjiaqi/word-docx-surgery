@@ -9,9 +9,10 @@
   comment parts were real. `--max-real 0` asserts "this was only a re-save".
 - Added `references/Word重存噪声.md` with the measured noise catalogue and the rules for
   what must *not* be normalized away.
-- `references/闸门边界.md`: banned index-based paragraph pairing once paragraph order has
-  changed (a real swap of 6 paragraph marks was silently reported as 3); documented that
-  comment `paraId` drift is a hint, not a failure.
+- `references/闸门边界.md`: banned index-based paragraph pairing once paragraph order
+  has changed (a real swap of 6 paragraph marks was silently missed by the index-paired
+  comparison and only appeared under content anchors); documented that comment `paraId`
+  drift is a hint, not a failure.
 - `references/环境事实.md`: documented the two known falsehoods of LibreOffice-style
   fallback rendering (no `STYLEREF` support, so captions render as an error; `cantSplit`
   rows dropped at page boundaries, so row counting lies).
