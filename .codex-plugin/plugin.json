@@ -1,6 +1,6 @@
 {
   "name": "word-docx-surgery",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Surgical, evidence-checked edits to existing .doc and .docx documents.",
   "author": {
     "name": "word-docx-surgery contributors",

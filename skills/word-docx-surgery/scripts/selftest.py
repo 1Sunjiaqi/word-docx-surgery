@@ -214,6 +214,84 @@ def case_g(tmp):
     check("G5 基线已存在时拒绝覆盖", rc != 0 and "拒绝覆盖" in out, "rc=%s" % rc)
 
 
+# --------------------------------------------------------------- H：Word 重存噪声
+# 候选件只要被 Word 打开保存过一次，就会出现一批"写法不同、语义相同"的差异。
+# 这里把实测到的 7 类灌进合成样本，验证 docx_semantic_diff.py 能把它们判成噪声，
+# 同时保证它不是"永远说没改"。
+
+DOC_H = DOC.replace(
+    "<w:r><w:t>标题</w:t></w:r>",
+    '<w:r><w:t>标题</w:t></w:r><w:bookmarkStart w:id="1" w:name="T1"/>'
+    '<w:bookmarkStart w:id="2" w:name="T2"/>').replace(
+    "<w:sectPr/>", '<w:sectPr/><w:bookmarkEnd w:id="1"/><w:bookmarkEnd w:id="2"/>')
+
+
+def resave_noise(document, real_change=False):
+    """灌入 Word 重新保存时的写法差异：命名空间声明、rsid、w14:paraId、
+    分页处拆 run、run/w:t 重新切分、xml:space、书签 id 重编号与顺序。"""
+    n = document
+    n = n.replace(
+        'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"',
+        'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"'
+        ' xmlns:w14="http://schemas.microsoft.com/office/word/2010/wordml"'
+        ' xmlns:unused="urn:selftest:unused"')
+    n = n.replace("<w:p>",
+                  '<w:p w:rsidR="00A21D77" w:rsidRDefault="000C137F" w14:paraId="3A7C1B01">')
+    n = n.replace("<w:r><w:t>标题</w:t></w:r>",
+                  '<w:r w:rsidRPr="00CF1B7B"><w:t>标题</w:t></w:r>')
+    n = n.replace("<w:r><w:rPr><w:b/></w:rPr><w:t>加粗的行</w:t></w:r>",
+                  "<w:r><w:rPr><w:b/></w:rPr><w:lastRenderedPageBreak/><w:t>加粗的</w:t></w:r>"
+                  "<w:r><w:rPr><w:b/></w:rPr><w:t>行</w:t></w:r>")
+    n = n.replace("<w:r><w:t>第一条</w:t></w:r>",
+                  "<w:r><w:t>第一</w:t></w:r><w:r><w:t>条</w:t></w:r>")
+    n = n.replace("<w:t>A 半角空格</w:t>", '<w:t xml:space="preserve">A 半角空格</w:t>')
+    n = n.replace('<w:bookmarkStart w:id="1" w:name="T1"/><w:bookmarkStart w:id="2" w:name="T2"/>',
+                  '<w:bookmarkStart w:id="7" w:name="T2"/><w:bookmarkStart w:id="6" w:name="T1"/>')
+    n = n.replace('<w:bookmarkEnd w:id="1"/><w:bookmarkEnd w:id="2"/>',
+                  '<w:bookmarkEnd w:id="7"/><w:bookmarkEnd w:id="6"/>')
+    if real_change:
+        n = n.replace("<w:t>乙</w:t>", "<w:t>乙乙</w:t>")
+    return n
+
+
+def case_h(tmp):
+    hbase = os.path.join(tmp, "H_base.docx")
+    hnoise = os.path.join(tmp, "H_noise.docx")
+    hreal = os.path.join(tmp, "H_noise_real.docx")
+    build(hbase, DOC_H)
+    build(hnoise, resave_noise(DOC_H))
+    build(hreal, resave_noise(DOC_H, real_change=True))
+
+    def sem(cand, tag, *extra):
+        jpath = os.path.join(tmp, "sem_%s.json" % tag)
+        rc, out = run("docx_semantic_diff.py", hbase, cand, "--quiet", "--json", jpath, *extra)
+        data = {}
+        if os.path.exists(jpath):
+            with open(jpath, encoding="utf-8") as fh:
+                data = json.load(fh)
+        return rc, data, out
+
+    rc, data, out = sem(hnoise, "noise", "--max-real", "0")
+    check("H1 7 类重存写法差异 -> 语义层 0 处真实改动",
+          rc == 0 and data.get("real_total") == 0,
+          "rc=%s real=%s" % (rc, data.get("real_total")))
+    check("H2 同一对文件字节层面确实变了（H1 不是空断言）",
+          (data.get("raw_parts_changed") or 0) >= 1,
+          "raw_parts_changed=%s" % data.get("raw_parts_changed"))
+
+    rc, data, out = sem(hreal, "noise_real", "--max-real", "0")
+    body = data.get("body_real_changes") or []
+    hit = any(c.get("cell") == "r00c01" for c in body)
+    check("H3 噪声 + 1 处改字 -> 只报这一处，并定位到格 r00c01",
+          rc == 1 and len(body) == 1 and hit,
+          "rc=%s 正文真实=%d 命中格=%s" % (rc, len(body), hit))
+
+    rc, data, out = sem(hreal, "noise_real_ok", "--max-real", "2")
+    check("H4 阈值调到实际真实改动数（1 部件 + 1 正文）-> 退出码 0",
+          rc == 0 and data.get("real_total") == 2,
+          "rc=%s real=%s" % (rc, data.get("real_total")))
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--keep", action="store_true", help="保留临时目录以便查看样本")
@@ -228,7 +306,7 @@ def main():
     for fn in (lambda: case_a(tmp, base), lambda: case_b(tmp, base),
                lambda: case_c(tmp, base), lambda: case_d(tmp, base),
                lambda: case_e(tmp, base), lambda: case_f(tmp, base),
-               lambda: case_g(tmp)):
+               lambda: case_g(tmp), lambda: case_h(tmp)):
         fn()
 
     bad = [r for r in RESULTS if not r[1]]
@@ -237,7 +315,8 @@ def main():
     for name, _, detail in bad:
         print("  未通过: %s  %s" % (name, detail))
     if not bad:
-        print("这套脚本在当前解释器与本目录下可用：闸门看得见四类真实改动，拦得住越界。")
+        print("这套脚本在当前解释器与本目录下可用：闸门看得见真实改动、拦得住越界，"
+              "语义层能把 Word 重存噪声摘出去。")
     if args.keep:
         print("临时目录保留在: %s" % tmp)
     else:

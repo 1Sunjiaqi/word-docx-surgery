@@ -52,6 +52,13 @@ machine-checkable gates:
 2. `render_qa.py` asks desktop Word to update fields, repaginate, export a PDF, and
    compare the changed pages across renders.
 
+When the candidate has been opened and saved by Word, run `docx_semantic_diff.py` in
+between: it normalizes the ways Word rewrites the same document (rsids, run splitting,
+headers and footers, bookmark ids) and separates that noise from real changes. On one
+real pair, gate 1 reported 48 changes while only 8 body changes and 4 comment parts were
+real. It is an explanation layer only — **out-of-scope edits are still decided by the
+byte-level comparison of gate 1**.
+
 Use it for:
 
 - Filling cells, rewording text, resetting list numbering, or inserting selected
@@ -95,7 +102,7 @@ Run the synthetic self-test before editing a real document:
 python skills/word-docx-surgery/scripts/selftest.py
 ```
 
-Expected result: `14 / 14` checks pass. The test builds synthetic OOXML fixtures in
+Expected result: `18 / 18` checks pass. The test builds synthetic OOXML fixtures in
 a temporary directory and does not read real documents.
 
 ## Basic Workflow

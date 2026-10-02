@@ -30,6 +30,8 @@ $skill-installer https://github.com/1Sunjiaqi/word-docx-surgery/tree/main/skills
 - The final answer must include machine-checkable evidence that only the declared
   package parts and rendered pages changed.
 - The task needs a change ledger, render comparison, and original-file integrity check.
+- The candidate has already been opened and saved in Word, so the change ledger is full
+  of the rewriter's own noise and must be separated from real edits.
 
 ## Do Not Use When
 
@@ -43,8 +45,10 @@ $skill-installer https://github.com/1Sunjiaqi/word-docx-surgery/tree/main/skills
 1. Freeze the original and derive a narrow allowlist from the request.
 2. Inspect the document structure with `docx_textconv.py`.
 3. Make one sample edit and pass `docx_ledger.py`.
-4. Render with desktop Word through `render_qa.py` and compare manifests.
-5. Verify the original is unchanged and report the ledger plus render conclusion.
+4. If the candidate has been re-saved by Word, separate Word's own rewriting from real
+   changes with `docx_semantic_diff.py` before writing the allowlist.
+5. Render with desktop Word through `render_qa.py` and compare manifests.
+6. Verify the original is unchanged and report the ledger plus render conclusion.
 
 ## Repository Paths
 

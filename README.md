@@ -46,6 +46,11 @@ Copy-Item -Recurse "$env:TEMP\word-docx-surgery\skills\word-docx-surgery" "$env:
 1. `docx_ledger.py` 证明内容与包内部件的每处变化都在白名单内。
 2. `render_qa.py` 让桌面版 Word 更新域、重新分页、导出 PDF，并比较不同版本之间的变化页。
 
+候选件被人用 Word 打开保存过时，中间加一层 `docx_semantic_diff.py`：它按语义归一
+（rsid、run 切分、页眉页脚、书签 id 等），把 Word 自己写的噪声与真实改动分开——
+实测一对文件上闸门一报 48 处，真实改动只有 8 处正文 + 4 个批注部件。它只是解释层，
+**"有没有越界"仍以闸门一的字节判等为准**。
+
 适合：
 
 - 在既有 Word 文档中填表、改措辞、重置列表编号或插入指定段落。
@@ -86,7 +91,7 @@ python -m pip install -r skills/word-docx-surgery/requirements-render.txt
 python skills/word-docx-surgery/scripts/selftest.py
 ```
 
-预期结果为 `14 / 14` 通过。它会在临时目录生成合成 OOXML 样本，不读取任何真实文档。
+预期结果为 `18 / 18` 通过。它会在临时目录生成合成 OOXML 样本，不读取任何真实文档。
 
 ## 基本流程
 

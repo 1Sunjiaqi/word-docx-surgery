@@ -45,6 +45,11 @@ python scripts/render_qa.py 候选.docx --compare qa_基线/manifest.json
 6. 收工跑两道闸门 + `scripts/verify_readonly.py`（证明既有的原件一个都没被碰）。每一步都 commit。
 7. 交付的是"改动清单 + 渲染结论"，不是"已完成"三个字。
 
+**候选件被人用 Word 打开保存过时**，加一步：闸门一必然噪声很大（实测 48 处里真实改动只有十几处），
+跑 `scripts/docx_semantic_diff.py` 把 Word 自己的写法摘出来，再照着它写白名单。
+顺序不能反：**"有没有越界"以闸门一的字节判等为准，语义层只用来解释和写白名单**。
+噪声清单与实测数字：`references/Word重存噪声.md`。
+
 逐步命令原文、禁止清单（每条对应一次真实事故）、失败样例：`references/工作流.md`。
 
 ## 闸门看得见什么（本 skill 的核心知识）
@@ -58,6 +63,7 @@ python scripts/render_qa.py 候选.docx --compare qa_基线/manifest.json
 | run 级字符格式 | 每段的 `runs=N rpr=<指纹>` | 把一个 run 加粗变红看不见 |
 | 空格的宽窄 | 先 `U+3000`/`U+00A0` 换可见标记，再折叠空白 | 半角空格换全角看不见 |
 | 部件内容 | `(size, sha256)` 按内容判等 | **只比长度 = 对等长改写完全失明** |
+| 段落的先后 | 两侧形状不同时改用内容锚点配对 | 按下标配对会**静默错配**：真的换了 6 处只报 3 处 |
 
 出现新的改动类别（域、书签、批注、内容控件、图片、样式）时，先造一个**只有这一类改动**的副本，
 跑一遍闸门，看它报不报。边界与失明点、只读登记机制：`references/闸门边界.md`。
@@ -78,7 +84,9 @@ python scripts/render_qa.py 候选.docx --compare qa_基线/manifest.json
 
 域更新时间、目录重排和真实分页只有桌面版 Word 算得出来。拉起 Word 的步骤在受限环境中
 可能挂起：先正常尝试，长时间没有输出就停止；清理时只结束自己启动的进程，不要按进程名
-批量终止 Python。更多兼容性说明见 `references/环境事实.md`。
+批量终止 Python。**拿不到桌面 Word 而退回 LibreOffice 之类的替代渲染器时，有两个已知假象**
+（不认 `STYLEREF`，题注会显示成 `Error: Reference source not found`；放不下的 `cantSplit` 行会被整行丢掉），
+见 `references/环境事实.md` §2.1。更多兼容性说明见同一文件。
 
 ## 换到新机器/新解释器后先自检
 
@@ -86,5 +94,5 @@ python scripts/render_qa.py 候选.docx --compare qa_基线/manifest.json
 python scripts/selftest.py
 ```
 
-它在临时目录里造样本，验证 A~G 七类改动是否都能被闸门咬住（14 项断言）。
+它在临时目录里造样本，验证 A~H 八类改动是否都能被闸门咬住、噪声有没有被误判成改动（18 项断言）。
 全部 OK 才说明这套脚本在当前环境里可用；有 FAIL 就先修环境，不要开始改真文档。
